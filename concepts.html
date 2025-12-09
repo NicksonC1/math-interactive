@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concept Overview - Stretch It Out!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Courier+New&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .math { font-family: 'Courier New', monospace; }
+        .concept-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .concept-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        .before-after-container {
+            position: relative;
+            overflow: hidden;
+        }
+        .graph-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .arrow-animation {
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
+            40%, 43% { transform: translate3d(0,-10px,0); }
+            70% { transform: translate3d(0,-5px,0); }
+            90% { transform: translate3d(0,-2px,0); }
+        }
+        .formula-highlight {
+            background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+            border: 2px solid #1976D2;
+        }
+        .tip-box {
+            background: linear-gradient(135deg, #FFF9C4 0%, #FFE082 100%);
+            border: 2px solid #F57F17;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <!-- Home Button -->
+    <button onclick="navigateTo('index.html')" class="fixed top-4 left-4 w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center hover:bg-purple-700 transition-all duration-300 z-50 shadow-lg">
+        <span class="text-lg">🏠</span>
+    </button>
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-8">
+        <div class="container mx-auto px-8">
+            <h1 class="text-5xl font-bold text-center mb-4">📚 Concept Overview</h1>
+            <p class="text-center text-purple-100 text-xl">Understanding how function transformations work</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-8 py-8">
+        <!-- Before and After Comparison -->
+        <div class="concept-card rounded-3xl shadow-xl p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Visual Transformation Guide</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Original Function -->
+                <div class="text-center">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Original Function</h3>
+                    <div class="graph-container p-4">
+                        <div id="originalGraph" class="w-full h-48 mb-4"></div>
+                        <div class="math text-lg font-bold text-gray-700">y = sin(x)</div>
+                        <p class="text-gray-600 text-sm mt-2">Standard sine wave</p>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="text-6xl arrow-animation mb-4">⬇️</div>
+                        <div class="text-lg font-semibold text-gray-700">Transformation</div>
+                    </div>
+                </div>
+
+                <!-- Transformed Function -->
+                <div class="text-center">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Transformed Function</h3>
+                    <div class="graph-container p-4">
+                        <div id="transformedGraph" class="w-full h-48 mb-4"></div>
+                        <div class="math text-lg font-bold text-blue-700">y = 4sin(x)</div>
+                        <p class="text-blue-600 text-sm mt-2">Vertical stretch by 4</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transformation Rules -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Vertical Transformations -->
+            <div class="concept-card rounded-2xl shadow-lg p-6">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="text-4xl">⬆️</div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-blue-600">Vertical Changes</h3>
+                        <p class="text-blue-500">Affect the height of the graph</p>
+                    </div>
+                </div>
+                
+                <div class="formula-highlight rounded-xl p-6 mb-6">
+                    <h4 class="font-bold text-blue-800 mb-3">Basic Formula:</h4>
+                    <div class="math text-2xl font-bold text-blue-900 mb-4">y = a · f(x)</div>
+                    <p class="text-blue-700 text-sm">Multiply the function by a constant</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h5 class="font-semibold text-blue-800 mb-2">📈 Vertical Stretch</h5>
+                        <div class="math text-lg text-blue-700 mb-2">y = 2f(x)</div>
+                        <p class="text-blue-600 text-sm">When a > 1, the graph becomes taller</p>
+                        <div class="mt-3">
+                            <strong>Example:</strong> y = 2sin(x) makes the sine wave twice as tall
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h5 class="font-semibold text-blue-800 mb-2">📉 Vertical Shrink</h5>
+                        <div class="math text-lg text-blue-700 mb-2">y = 0.5f(x)</div>
+                        <p class="text-blue-600 text-sm">When 0 < a < 1, the graph becomes shorter</p>
+                        <div class="mt-3">
+                            <strong>Example:</strong> y = 0.5x² makes the parabola half as tall
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horizontal Transformations -->
+            <div class="concept-card rounded-2xl shadow-lg p-6">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="text-4xl">➡️</div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-green-600">Horizontal Changes</h3>
+                        <p class="text-green-500">Affect the width of the graph</p>
+                    </div>
+                </div>
+                
+                <div class="formula-highlight rounded-xl p-6 mb-6">
+                    <h4 class="font-bold text-blue-800 mb-3">Basic Formula:</h4>
+                    <div class="math text-2xl font-bold text-blue-900 mb-4">y = f(b · x)</div>
+                    <p class="text-blue-700 text-sm">Multiply the input by a constant</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <h5 class="font-semibold text-green-800 mb-2">📏 Horizontal Shrink</h5>
+                        <div class="math text-lg text-green-700 mb-2">y = f(2x)</div>
+                        <p class="text-green-600 text-sm">When b > 1, the graph becomes narrower</p>
+                        <div class="mt-3">
+                            <strong>Example:</strong> y = sin(2x) makes the sine wave twice as narrow
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <h5 class="font-semibold text-green-800 mb-2">📐 Horizontal Stretch</h5>
+                        <div class="math text-lg text-green-700 mb-2">y = f(x/2)</div>
+                        <p class="text-green-600 text-sm">When 0 < b < 1, the graph becomes wider</p>
+                        <div class="mt-3">
+                            <strong>Example:</strong> y = cos(x/2) makes the cosine wave twice as wide
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Examples -->
+        <div class="concept-card rounded-2xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Interactive Examples</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Example 1 -->
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-blue-800 mb-4">Example 1: Vertical Transformation</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <strong>Original:</strong> <span class="math">y = x²</span>
+                        </div>
+                        <div>
+                            <strong>Transformed:</strong> <span class="math text-blue-700">y = 3x²</span>
+                        </div>
+                        <div>
+                            <strong>Effect:</strong> Vertical stretch by factor 3
+                        </div>
+                        <div>
+                            <strong>What changes:</strong> All y-values are multiplied by 3
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div id="example1Graph" class="w-full h-32"></div>
+                    </div>
+                </div>
+
+                <!-- Example 2 -->
+                <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-green-800 mb-4">Example 2: Horizontal Transformation</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <strong>Original:</strong> <span class="math">y = sin(x)</span>
+                        </div>
+                        <div>
+                            <strong>Transformed:</strong> <span class="math text-green-700">y = sin(2x)</span>
+                        </div>
+                        <div>
+                            <strong>Effect:</strong> Horizontal shrink by factor ½
+                        </div>
+                        <div>
+                            <strong>What changes:</strong> Period becomes half as long
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div id="example2Graph" class="w-full h-32"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Insights -->
+        <div class="tip-box rounded-2xl shadow-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-orange-900 mb-6 text-center">💡 Key Insights</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">🎯</div>
+                    <h3 class="text-xl font-bold text-orange-800 mb-2">Outside = Vertical</h3>
+                    <p class="text-orange-700">Changes outside the function affect height (y-values)</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-4xl mb-4">🔄</div>
+                    <h3 class="text-xl font-bold text-orange-800 mb-2">Inside = Horizontal</h3>
+                    <p class="text-orange-700">Changes inside the function affect width (x-values)</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-4xl mb-4">⚠️</div>
+                    <h3 class="text-xl font-bold text-orange-800 mb-2">Inverse Effect</h3>
+                    <p class="text-orange-700">Horizontal changes work opposite to what you might expect</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-center space-x-6">
+            <button onclick="navigateTo('graph-lab.html')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-semibold transition-all transform hover:scale-105 shadow-lg">
+                🔧 Try Interactive Lab
+            </button>
+            <button onclick="navigateTo('index.html')" class="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-semibold transition-all transform hover:scale-105 shadow-lg">
+                🧩 Practice Mode
+            </button>
+            <button onclick="navigateTo('quiz.html')" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 rounded-full font-semibold transition-all transform hover:scale-105 shadow-lg">
+                🏆 Take Quiz
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let originalChart, transformedChart, example1Chart, example2Chart;
+
+        // Initialize all graphs
+        function initGraphs() {
+            initBeforeAfterGraphs();
+            initExampleGraphs();
+        }
+
+        // Initialize before and after comparison graphs
+        function initBeforeAfterGraphs() {
+            // Original graph
+            originalChart = echarts.init(document.getElementById('originalGraph'));
+            const originalData = [];
+            for (let x = 0; x <= 6.28; x += 0.1) {
+                originalData.push([x, Math.sin(x)]);
+            }
+
+            const originalOption = {
+                backgroundColor: 'transparent',
+                grid: { left: '10%', right: '10%', top: '10%', bottom: '20%' },
+                xAxis: { type: 'value', min: 0, max: 6.28, show: false },
+                yAxis: { type: 'value', min: -4.5, max: 4.5, show: false },
+                series: [{
+                    type: 'line',
+                    data: originalData,
+                    lineStyle: { color: '#666', width: 2 },
+                    symbol: 'none'
+                }]
+            };
+            originalChart.setOption(originalOption);
+
+            // Transformed graph
+            transformedChart = echarts.init(document.getElementById('transformedGraph'));
+            const transformedData = [];
+            for (let x = 0; x <= 6.28; x += 0.1) {
+                transformedData.push([x, 4 * Math.sin(x)]);
+            }
+
+            const transformedOption = {
+                backgroundColor: 'transparent',
+                grid: { left: '10%', right: '10%', top: '10%', bottom: '20%' },
+                xAxis: { type: 'value', min: 0, max: 6.28, show: false },
+                yAxis: { type: 'value', min: -4.5, max: 4.5, show: false },
+                series: [{
+                    type: 'line',
+                    data: transformedData,
+                    lineStyle: { color: '#2196F3', width: 5 },
+                    symbol: 'none'
+                }]
+            };
+            transformedChart.setOption(transformedOption);
+        }
+
+        // Initialize example graphs
+        function initExampleGraphs() {
+            // Example 1: Quadratic transformation
+            example1Chart = echarts.init(document.getElementById('example1Graph'));
+            const data1 = [];
+            const data2 = [];
+            for (let x = -3; x <= 3; x += 0.1) {
+                data1.push([x, x * x]);
+                data2.push([x, 3 * x * x]);
+            }
+
+            const example1Option = {
+                backgroundColor: 'transparent',
+                grid: { left: '10%', right: '10%', top: '10%', bottom: '10%' },
+                xAxis: { type: 'value', min: -3, max: 3, show: false },
+                yAxis: { type: 'value', show: false },
+                series: [
+                    {
+                        type: 'line',
+                        data: data1,
+                        lineStyle: { color: '#666', width: 2, type: 'dashed' },
+                        symbol: 'none'
+                    },
+                    {
+                        type: 'line',
+                        data: data2,
+                        lineStyle: { color: '#1976D2', width: 3 },
+                        symbol: 'none'
+                    }
+                ]
+            };
+            example1Chart.setOption(example1Option);
+
+            // Example 2: Sine transformation
+            example2Chart = echarts.init(document.getElementById('example2Graph'));
+            const data3 = [];
+            const data4 = [];
+            for (let x = 0; x <= 6.28; x += 0.1) {
+                data3.push([x, Math.sin(x)]);
+                data4.push([x, Math.sin(2 * x)]);
+            }
+
+            const example2Option = {
+                backgroundColor: 'transparent',
+                grid: { left: '10%', right: '10%', top: '10%', bottom: '10%' },
+                xAxis: { type: 'value', min: 0, max: 6.28, show: false },
+                yAxis: { type: 'value', show: false },
+                series: [
+                    {
+                        type: 'line',
+                        data: data3,
+                        lineStyle: { color: '#666', width: 2, type: 'dashed' },
+                        symbol: 'none'
+                    },
+                    {
+                        type: 'line',
+                        data: data4,
+                        lineStyle: { color: '#43A047', width: 3 },
+                        symbol: 'none'
+                    }
+                ]
+            };
+            example2Chart.setOption(example2Option);
+        }
+
+        // Navigation function
+        function navigateTo(page) {
+            anime({
+                targets: 'body',
+                opacity: [1, 0.8],
+                duration: 300,
+                complete: () => {
+                    window.location.href = page;
+                }
+            });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initGraphs();
+            
+            // Animate entrance
+            anime({
+                targets: '.concept-card',
+                translateY: [50, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(200),
+                duration: 800,
+                easing: 'easeOutCubic'
+            });
+
+            // Animate key insights
+            anime({
+                targets: '.tip-box',
+                scale: [0.9, 1],
+                opacity: [0, 1],
+                delay: 1200,
+                duration: 600,
+                easing: 'easeOutBack'
+            });
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (originalChart) originalChart.resize();
+            if (transformedChart) transformedChart.resize();
+            if (example1Chart) example1Chart.resize();
+            if (example2Chart) example2Chart.resize();
+        });
+    </script>
+</body>
+</html>

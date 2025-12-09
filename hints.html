@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step-by-Step Hints - Stretch It Out!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Courier+New&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .math { font-family: 'Courier New', monospace; }
+        .step-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid var(--step-color);
+        }
+        .step-card.active {
+            border-left-color: #1976D2;
+            box-shadow: 0 8px 16px rgba(25, 118, 210, 0.2);
+        }
+        .step-indicator {
+            background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%);
+            transition: all 0.3s ease;
+        }
+        .step-indicator.active {
+            background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+            color: white;
+        }
+        .step-indicator.completed {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+        }
+        .lightbulb-pulse {
+            animation: lightbulbGlow 2s ease-in-out infinite alternate;
+        }
+        @keyframes lightbulbGlow {
+            from { 
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) drop-shadow(0 0 10px rgba(255, 202, 40, 0.3));
+                transform: scale(1);
+            }
+            to { 
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) drop-shadow(0 0 20px rgba(255, 202, 40, 0.6));
+                transform: scale(1.05);
+            }
+        }
+        .mini-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--slider-start), var(--slider-end));
+            outline: none;
+        }
+        .mini-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--thumb-color);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .mini-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--thumb-color);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .tooltip-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-green-50 to-teal-50">
+    <!-- Home Button -->
+    <button onclick="navigateTo('index.html')" class="fixed top-4 left-4 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center hover:bg-green-700 transition-all duration-300 z-50 shadow-lg">
+        <span class="text-lg">🏠</span>
+    </button>
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-green-600 to-teal-600 text-white py-8">
+        <div class="container mx-auto px-8">
+            <h1 class="text-4xl font-bold text-center mb-2">🧩 Step-by-Step Hints</h1>
+            <p class="text-center text-green-100 text-lg">Master transformations with guided learning</p>
+        </div>
+    </div>
+
+    <!-- Progress Tracker -->
+    <div class="container mx-auto px-8 py-6">
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-center space-x-4">
+                <div class="text-center">
+                    <div class="text-sm text-gray-600 mb-2">Current Step</div>
+                    <div class="text-2xl font-bold text-green-600" id="stepCounter">1 of 4</div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <div class="step-indicator active w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="step1">1</div>
+                    <div class="step-indicator w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="step2">2</div>
+                    <div class="step-indicator w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="step3">3</div>
+                    <div class="step-indicator w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="step4">4</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-sm text-gray-600 mb-2">Progress</div>
+                    <div class="w-32 bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 25%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Step Card -->
+        <div class="step-card rounded-3xl shadow-xl p-8 mb-8" id="mainStepCard" style="--step-color: #E0E0E0;">
+            <div class="flex items-start space-x-6">
+                <!-- Step Icon -->
+                <div class="flex-shrink-0">
+                    <div class="text-6xl lightbulb-pulse" id="stepIcon">💡</div>
+                </div>
+                
+                <!-- Step Content -->
+                <div class="flex-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-3xl font-bold text-gray-800" id="stepTitle">Identify the Transformation Type</h2>
+                        <div class="text-sm text-gray-500" id="stepNumber">Step 1 of 4</div>
+                    </div>
+                    
+                    <div class="text-lg text-gray-700 mb-6" id="stepContent">
+                        Look at the equation and determine if it represents a vertical change (affects height) or horizontal change (affects width). 
+                        Check if the transformation is applied inside or outside the function.
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                        <h4 class="font-semibold text-gray-800 mb-3">Example Question:</h4>
+                        <div class="math text-xl font-bold text-gray-700 mb-3">y = 3sin(2x)</div>
+                        <p class="text-gray-600">What transformations are applied to the sine function?</p>
+                    </div>
+                    
+                    <!-- Interactive Preview -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-3">Try This:</h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Adjust Vertical Factor (a)</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" id="verticalSlider" min="0.1" max="5" step="0.1" value="1" 
+                                               class="mini-slider flex-1" style="--slider-start: #64B5F6; --slider-end: #1E88E5; --thumb-color: #1976D2;">
+                                        <span id="verticalValue" class="text-blue-600 font-bold w-12">1.0</span>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Adjust Horizontal Factor (b)</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" id="horizontalSlider" min="0.1" max="5" step="0.1" value="1" 
+                                               class="mini-slider flex-1" style="--slider-start: #A5D6A7; --slider-end: #43A047; --thumb-color: #43A047;">
+                                        <span id="horizontalValue" class="text-green-600 font-bold w-12">1.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-3">Live Preview:</h4>
+                            <div class="bg-white rounded-xl p-4 shadow-inner">
+                                <div id="miniGraph" class="w-full h-32"></div>
+                                <div class="text-center mt-2">
+                                    <div class="math text-lg font-bold text-gray-700" id="liveEquation">y = 1.0 · sin(1.0·x)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between items-center mb-8">
+            <button onclick="previousStep()" id="prevBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-8 py-3 rounded-full font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                ← Previous Step
+            </button>
+            
+            <div class="text-center">
+                <button onclick="navigateTo('graph-lab.html')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-semibold transition-colors">
+                    🔧 Try Full Lab
+                </button>
+            </div>
+            
+            <button onclick="nextStep()" id="nextBtn" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors">
+                Next Step →
+            </button>
+        </div>
+
+        <!-- Floating Tooltip -->
+        <div class="fixed top-1/4 right-8 bg-gray-800 text-white p-4 rounded-xl shadow-xl tooltip-float max-w-xs z-40">
+            <div class="flex items-center space-x-2 mb-2">
+                <div class="text-lg">💬</div>
+                <div class="font-semibold">Hint Reminder</div>
+            </div>
+            <div class="text-sm text-gray-300" id="tooltipText">
+                Outside = Vertical, Inside = Horizontal!
+            </div>
+            <div class="mt-2 text-xs text-gray-400">
+                Hover over elements for more tips
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
+            <div class="text-6xl mb-4">🎉</div>
+            <h3 class="text-3xl font-bold text-green-600 mb-4">Step Completed!</h3>
+            <p class="text-gray-600 mb-6" id="successMessage">
+                Great job! You've mastered identifying transformation types.
+            </p>
+            <button onclick="hideSuccessModal()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-semibold transition-colors">
+                Continue Learning
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let miniChart;
+        let verticalFactor = 1.0;
+        let horizontalFactor = 1.0;
+
+        // Step definitions
+        const steps = [
+            {
+                id: 1,
+                icon: '💡',
+                title: 'Identify the Transformation Type',
+                content: 'Look at the equation and determine if it represents a vertical change (affects height) or horizontal change (affects width). Check if the transformation is applied inside or outside the function.',
+                example: 'y = 3sin(2x)',
+                tip: 'Outside = Vertical, Inside = Horizontal!'
+            },
+            {
+                id: 2,
+                icon: '🔍',
+                title: 'Locate the Transformation Factors',
+                content: 'Find the numbers that control the transformations. The vertical factor (a) is outside the function, and the horizontal factor (b) is inside the function.',
+                example: 'In y = 3sin(2x), a = 3 and b = 2',
+                tip: 'a = vertical factor, b = horizontal factor'
+            },
+            {
+                id: 3,
+                icon: '📏',
+                title: 'Apply Vertical Changes First',
+                content: 'Start with the vertical transformation. If a > 1, it\'s a stretch. If 0 < a < 1, it\'s a shrink. This affects the height of all points.',
+                example: 'y = 3sin(x) stretches vertically by factor 3',
+                tip: 'a > 1 = stretch, 0 < a < 1 = shrink'
+            },
+            {
+                id: 4,
+                icon: '🔄',
+                title: 'Apply Horizontal Changes Last',
+                content: 'Apply the horizontal transformation. Remember: horizontal changes work inversely! If b > 1, it\'s a shrink. If 0 < b < 1, it\'s a stretch.',
+                example: 'y = sin(2x) shrinks horizontally by factor 1/2',
+                tip: 'b > 1 = shrink, 0 < b < 1 = stretch (inverse!)'
+            }
+        ];
+
+        // Initialize page
+        function initPage() {
+            setupMiniGraph();
+            setupSliders();
+            updateStep();
+            animateEntrance();
+        }
+
+        // Setup mini graph
+        function setupMiniGraph() {
+            miniChart = echarts.init(document.getElementById('miniGraph'));
+            updateMiniGraph();
+        }
+
+        // Update mini graph
+        function updateMiniGraph() {
+            const data = [];
+            for (let x = 0; x <= 6.28; x += 0.1) {
+                data.push([x, verticalFactor * Math.sin(horizontalFactor * x)]);
+            }
+
+            const option = {
+                backgroundColor: 'transparent',
+                grid: { left: '10%', right: '10%', top: '10%', bottom: '20%' },
+                xAxis: { type: 'value', min: 0, max: 6.28, show: false },
+                yAxis: { type: 'value', show: false },
+                series: [{
+                    type: 'line',
+                    data: data,
+                    lineStyle: { color: '#1976D2', width: 3 },
+                    symbol: 'none',
+                    animation: true,
+                    animationDuration: 400
+                }]
+            };
+
+            miniChart.setOption(option);
+            
+            // Update equation display
+            const a = verticalFactor.toFixed(1);
+            const b = horizontalFactor.toFixed(1);
+            document.getElementById('liveEquation').textContent = `y = ${a} · sin(${b}·x)`;
+        }
+
+        // Setup sliders
+        function setupSliders() {
+            const vSlider = document.getElementById('verticalSlider');
+            const hSlider = document.getElementById('horizontalSlider');
+            
+            vSlider.addEventListener('input', function() {
+                verticalFactor = parseFloat(this.value);
+                document.getElementById('verticalValue').textContent = verticalFactor.toFixed(1);
+                updateMiniGraph();
+                updateTooltip();
+            });
+            
+            hSlider.addEventListener('input', function() {
+                horizontalFactor = parseFloat(this.value);
+                document.getElementById('horizontalValue').textContent = horizontalFactor.toFixed(1);
+                updateMiniGraph();
+                updateTooltip();
+            });
+        }
+
+        // Update tooltip
+        function updateTooltip() {
+            let message = '';
+            
+            if (verticalFactor > 1) {
+                message += `Vertical stretch by ${verticalFactor.toFixed(1)}. `;
+            } else if (verticalFactor < 1) {
+                message += `Vertical shrink by ${verticalFactor.toFixed(1)}. `;
+            }
+            
+            if (horizontalFactor > 1) {
+                message += `Horizontal shrink by ${(1/horizontalFactor).toFixed(2)}. `;
+            } else if (horizontalFactor < 1) {
+                message += `Horizontal stretch by ${(1/horizontalFactor).toFixed(2)}. `;
+            }
+            
+            if (message === '') {
+                message = 'No transformations applied. Try moving the sliders!';
+            }
+            
+            document.getElementById('tooltipText').textContent = message;
+        }
+
+        // Update step display
+        function updateStep() {
+            const step = steps[currentStep - 1];
+            
+            // Update step card
+            document.getElementById('stepIcon').textContent = step.icon;
+            document.getElementById('stepTitle').textContent = step.title;
+            document.getElementById('stepContent').textContent = step.content;
+            document.getElementById('stepNumber').textContent = `Step ${currentStep} of ${steps.length}`;
+            
+            // Update example
+            document.querySelector('.bg-gray-50 .math').textContent = step.example;
+            
+            // Update tooltip
+            document.getElementById('tooltipText').textContent = step.tip;
+            
+            // Update progress
+            document.getElementById('stepCounter').textContent = `${currentStep} of ${steps.length}`;
+            const progress = (currentStep / steps.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // Update step indicators
+            steps.forEach((s, index) => {
+                const indicator = document.getElementById(`step${index + 1}`);
+                indicator.classList.remove('active', 'completed');
+                
+                if (index + 1 === currentStep) {
+                    indicator.classList.add('active');
+                } else if (index + 1 < currentStep) {
+                    indicator.classList.add('completed');
+                }
+            });
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = currentStep === 1;
+            document.getElementById('nextBtn').textContent = currentStep === steps.length ? 'Complete →' : 'Next Step →';
+            
+            // Update step card border color
+            const stepColors = ['#E0E0E0', '#1976D2', '#43A047', '#FF9800'];
+            document.getElementById('mainStepCard').style.setProperty('--step-color', stepColors[currentStep - 1]);
+        }
+
+        // Next step
+        function nextStep() {
+            if (currentStep < steps.length) {
+                currentStep++;
+                updateStep();
+                
+                // Animate step transition
+                anime({
+                    targets: '#mainStepCard',
+                    scale: [0.98, 1],
+                    duration: 300,
+                    easing: 'easeOutCubic'
+                });
+                
+                // Show success message for completed steps
+                if (currentStep > 1) {
+                    showSuccessModal(`Step ${currentStep - 1} completed! Ready for the next challenge?`);
+                }
+            } else {
+                // All steps completed
+                showSuccessModal('🎉 Congratulations! You\'ve mastered all the steps!');
+                setTimeout(() => {
+                    navigateTo('quiz.html');
+                }, 2000);
+            }
+        }
+
+        // Previous step
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStep();
+                
+                // Animate step transition
+                anime({
+                    targets: '#mainStepCard',
+                    scale: [0.98, 1],
+                    duration: 300,
+                    easing: 'easeOutCubic'
+                });
+            }
+        }
+
+        // Show success modal
+        function showSuccessModal(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successModal').classList.remove('hidden');
+            
+            anime({
+                targets: '#successModal > div',
+                scale: [0.8, 1],
+                opacity: [0, 1],
+                duration: 500,
+                easing: 'easeOutBack'
+            });
+        }
+
+        // Hide success modal
+        function hideSuccessModal() {
+            anime({
+                targets: '#successModal > div',
+                scale: [1, 0.8],
+                opacity: [1, 0],
+                duration: 300,
+                easing: 'easeInBack',
+                complete: () => {
+                    document.getElementById('successModal').classList.add('hidden');
+                }
+            });
+        }
+
+        // Animate entrance
+        function animateEntrance() {
+            anime({
+                targets: '.bg-white',
+                translateY: [50, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(200),
+                duration: 800,
+                easing: 'easeOutCubic'
+            });
+
+            anime({
+                targets: '.step-card',
+                scale: [0.95, 1],
+                opacity: [0, 1],
+                delay: 600,
+                duration: 600,
+                easing: 'easeOutBack'
+            });
+
+            anime({
+                targets: '.tooltip-float',
+                translateX: [100, 0],
+                opacity: [0, 1],
+                delay: 1200,
+                duration: 500,
+                easing: 'easeOutCubic'
+            });
+        }
+
+        // Navigation
+        function navigateTo(page) {
+            anime({
+                targets: 'body',
+                opacity: [1, 0.8],
+                duration: 300,
+                complete: () => {
+                    window.location.href = page;
+                }
+            });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initPage();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (miniChart) {
+                miniChart.resize();
+            }
+        });
+    </script>
+</body>
+</html>

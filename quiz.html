@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Quiz - Stretch It Out!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Courier+New&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .math { font-family: 'Courier New', monospace; }
+        .question-card { 
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .question-card:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .option-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #E0E0E0;
+        }
+        .option-button:hover {
+            border-color: #1976D2;
+            background-color: #E3F2FD;
+            transform: translateY(-1px);
+        }
+        .option-button.selected {
+            border-color: #1976D2;
+            background-color: #1976D2;
+            color: white;
+        }
+        .option-button.correct {
+            border-color: #4CAF50;
+            background-color: #4CAF50;
+            color: white;
+            animation: correctPulse 0.6s ease-out;
+        }
+        .option-button.incorrect {
+            border-color: #F44336;
+            background-color: #F44336;
+            color: white;
+            animation: incorrectShake 0.5s ease-in-out;
+        }
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+            transition: width 0.5s ease-out;
+        }
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        .feedback-correct { background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); }
+        .feedback-incorrect { background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%); }
+        .timer-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .quiz-paused { filter: blur(2px); pointer-events: none; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <!-- Home Button -->
+    <button onclick="navigateTo('index.html')" class="fixed top-4 left-4 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center hover:bg-green-700 transition-all duration-300 z-50 shadow-lg">
+        <span class="text-lg">🏠</span>
+    </button>
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-green-600 to-blue-600 text-white py-6">
+        <div class="container mx-auto px-8">
+            <h1 class="text-4xl font-bold text-center mb-2">🏆 Master Quiz</h1>
+            <p class="text-center text-green-100 text-lg">Test your knowledge of function transformations</p>
+        </div>
+    </div>
+
+    <!-- Quiz Progress -->
+    <div class="container mx-auto px-8 py-6">
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-green-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg" id="questionNumber">1</div>
+                    <div>
+                        <div class="font-semibold text-gray-800">Question <span id="currentQ">1</span> of <span id="totalQ">30</span></div>
+                        <div class="text-sm text-gray-600">Master Quiz: Level 1</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <!-- Timer -->
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-orange-600 timer-pulse" id="timer">05:00</div>
+                        <div class="text-sm text-gray-600">Time Remaining</div>
+                    </div>
+                    
+                    <!-- Score -->
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600" id="score">0</div>
+                        <div class="text-sm text-gray-600">Score</div>
+                    </div>
+                    
+                    <!-- Pause Button -->
+                    <button onclick="togglePause()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-full font-semibold transition-colors" id="pauseBtn">
+                        ⏸️ Pause
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 rounded-full h-3">
+                <div id="progressBar" class="progress-bar h-3 rounded-full" style="width: 3.33%"></div>
+            </div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8" id="questionCard">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6" id="questionText">
+                    Which equation represents a vertical stretch by a factor of 3 of the parent function y = f(x)?
+                </h2>
+                
+                <div class="space-y-4" id="optionsContainer">
+                    <!-- Options will be generated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button onclick="submitAnswer()" id="submitBtn" class="bg-green-600 hover:bg-green-700 text-white px-12 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Submit Answer
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-center space-x-4">
+            <button onclick="navigateTo('hints.html')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full font-semibold transition-colors">
+                🧩 Need Help?
+            </button>
+            <button onclick="navigateTo('study-guide.html')" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-full font-semibold transition-colors">
+                📖 Study Guide
+            </button>
+            <button onclick="quitQuiz()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-semibold transition-colors">
+                🚪 Quit Quiz
+            </button>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl">
+            <div id="feedbackContent">
+                <!-- Content will be generated by JavaScript -->
+            </div>
+            
+            <div class="flex justify-center space-x-4 mt-8">
+                <button onclick="nextQuestion()" id="nextBtn" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-bold transition-colors">
+                    Next Question →
+                </button>
+                <button onclick="viewExplanation()" id="explainBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-bold transition-colors">
+                    📚 Explanation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pause Modal -->
+    <div id="pauseModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
+            <div class="text-6xl mb-4">⏸️</div>
+            <h3 class="text-3xl font-bold text-gray-800 mb-4">Quiz Paused</h3>
+            <p class="text-gray-600 mb-8">Take your time! Your progress is saved.</p>
+            
+            <div class="flex space-x-4">
+                <button onclick="resumeQuiz()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition-colors">
+                    Resume
+                </button>
+                <button onclick="quitQuiz()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-xl font-semibold transition-colors">
+                    Quit Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="resultsModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl text-center">
+            <div id="resultsContent">
+                <!-- Content will be generated by JavaScript -->
+            </div>
+            
+            <div class="flex justify-center space-x-4 mt-8">
+                <button onclick="restartQuiz()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full font-bold transition-colors">
+                    🔄 Try Again
+                </button>
+                <button onclick="navigateTo('achievements.html')" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-full font-bold transition-colors">
+                    🏆 View Achievements
+                </button>
+                <button onclick="navigateTo('study-guide.html')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition-colors">
+                    📖 Review Material
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Question bank with 30 questions
+        const questionBank = [
+            {
+                id: 1,
+                question: "Which equation represents a vertical stretch by a factor of 3 of the parent function y = f(x)?",
+                options: ["y = f(3x)", "y = 3f(x)", "y = f(x/3)", "y = ⅓ f(x)"],
+                correct: 1,
+                explanation: "A vertical stretch by factor 3 means multiplying the function output by 3: y = 3f(x)"
+            },
+            {
+                id: 2,
+                question: "Which equation represents a horizontal shrink by a factor of ½ of the parent function y = f(x)?",
+                options: ["y = f(½x)", "y = ½ f(x)", "y = f(2x)", "y = 2f(x)"],
+                correct: 2,
+                explanation: "A horizontal shrink by factor ½ means multiplying the input by 2: y = f(2x)"
+            },
+            {
+                id: 3,
+                question: "Which transformation is applied to y = √x to get y = √(4x)?",
+                options: ["Vertical stretch by 4", "Horizontal stretch by 4", "Vertical shrink by ¼", "Horizontal shrink by ¼"],
+                correct: 3,
+                explanation: "y = √(4x) = √4 · √x = 2√x, which is a vertical stretch by 2, or equivalently, a horizontal shrink by ¼"
+            },
+            {
+                id: 4,
+                question: "The function y = 5|x| is a transformation of y = |x|. What is it?",
+                options: ["Horizontal stretch by 5", "Vertical stretch by 5", "Horizontal shrink by 5", "Vertical shrink by ⅕"],
+                correct: 1,
+                explanation: "Multiplying the function by 5: y = 5|x| creates a vertical stretch by factor 5"
+            },
+            {
+                id: 5,
+                question: "Which equation causes a horizontal stretch of the cubic function y = x³?",
+                options: ["y = (4x)³", "y = 4x³", "y = (¼x)³", "y = ¼ x³"],
+                correct: 2,
+                explanation: "A horizontal stretch means multiplying the input by a fraction: y = (¼x)³"
+            },
+            {
+                id: 6,
+                question: "The graph of y = sin(x) is transformed to y = sin(2x). What is the effect?",
+                options: ["The period is halved; horizontal shrink by ½", "The period is doubled; horizontal stretch by 2", "The amplitude is doubled; vertical stretch by 2", "The amplitude is halved; vertical shrink by ½"],
+                correct: 0,
+                explanation: "y = sin(2x) compresses the graph horizontally by factor ½, making the period half as long"
+            },
+            {
+                id: 7,
+                question: "Which of the following equations represents a vertical shrink?",
+                options: ["y = 0.25 log(x)", "y = log(0.25x)", "y = 4 log(x)", "y = log(4x)"],
+                correct: 0,
+                explanation: "y = 0.25 log(x) multiplies the function output by 0.25, creating a vertical shrink"
+            },
+            {
+                id: 8,
+                question: "Starting with y = x², which sequence produces y = (2x)²?",
+                options: ["Horizontal shrink by ½", "Vertical stretch by 2", "Horizontal stretch by 2", "Vertical shrink by ½"],
+                correct: 0,
+                explanation: "y = (2x)² represents a horizontal shrink by factor ½"
+            },
+            {
+                id: 9,
+                question: "The point (2, 4) on y = x² lies on a transformed line y = kx. If the line is steeper, which is true about k?",
+                options: ["0 < k < 1", "k = 1", "k > 1", "k < 0"],
+                correct: 2,
+                explanation: "A steeper line means the slope k is greater than 1"
+            },
+            {
+                id: 10,
+                question: "For the function y = ∛x, which transformation results in y = ∛(x/5)?",
+                options: ["Horizontal stretch by 5", "Horizontal shrink by 5", "Vertical stretch by 5", "Vertical shrink by 5"],
+                correct: 0,
+                explanation: "y = ∛(x/5) represents a horizontal stretch by factor 5"
+            }
+        ];
+
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedAnswer = null;
+        let timeRemaining = 300; // 5 minutes in seconds
+        let timerInterval = null;
+        let isPaused = false;
+        let quizStartTime = null;
+
+        // Initialize quiz
+        function initQuiz() {
+            loadQuestions();
+            displayQuestion();
+            startTimer();
+            quizStartTime = Date.now();
+        }
+
+        // Load random questions
+        function loadQuestions() {
+            currentQuestions = questionBank.sort(() => Math.random() - 0.5).slice(0, 10);
+            currentQuestionIndex = 0;
+            score = 0;
+        }
+
+        // Display current question
+        function displayQuestion() {
+            if (currentQuestionIndex >= currentQuestions.length) {
+                showResults();
+                return;
+            }
+
+            const question = currentQuestions[currentQuestionIndex];
+            
+            // Update question number and progress
+            document.getElementById('questionNumber').textContent = currentQuestionIndex + 1;
+            document.getElementById('currentQ').textContent = currentQuestionIndex + 1;
+            document.getElementById('totalQ').textContent = currentQuestions.length;
+            
+            const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // Update question text
+            document.getElementById('questionText').textContent = question.question;
+            
+            // Generate options
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-button w-full text-left p-4 rounded-xl transition-all';
+                button.textContent = option;
+                button.onclick = () => selectAnswer(index);
+                button.id = `option-${index}`;
+                optionsContainer.appendChild(button);
+            });
+            
+            // Reset selection
+            selectedAnswer = null;
+            document.getElementById('submitBtn').disabled = true;
+            
+            // Animate question entrance
+            anime({
+                targets: '#questionCard',
+                scale: [0.95, 1],
+                opacity: [0.8, 1],
+                duration: 500,
+                easing: 'easeOutCubic'
+            });
+        }
+
+        // Select answer
+        function selectAnswer(index) {
+            // Clear previous selection
+            document.querySelectorAll('.option-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Select new answer
+            const selectedButton = document.getElementById(`option-${index}`);
+            selectedButton.classList.add('selected');
+            selectedAnswer = index;
+            
+            // Enable submit button
+            document.getElementById('submitBtn').disabled = false;
+            
+            // Animate selection
+            anime({
+                targets: selectedButton,
+                scale: [1, 1.02, 1],
+                duration: 300,
+                easing: 'easeOutCubic'
+            });
+        }
+
+        // Submit answer
+        function submitAnswer() {
+            if (selectedAnswer === null) return;
+            
+            const question = currentQuestions[currentQuestionIndex];
+            const isCorrect = selectedAnswer === question.correct;
+            
+            // Disable submit button
+            document.getElementById('submitBtn').disabled = true;
+            
+            // Show correct/incorrect feedback
+            document.querySelectorAll('.option-button').forEach((btn, index) => {
+                if (index === question.correct) {
+                    btn.classList.add('correct');
+                } else if (index === selectedAnswer && !isCorrect) {
+                    btn.classList.add('incorrect');
+                }
+            });
+            
+            // Update score
+            if (isCorrect) {
+                score++;
+                document.getElementById('score').textContent = score;
+                
+                // Animate score increase
+                anime({
+                    targets: '#score',
+                    scale: [1, 1.2, 1],
+                    color: ['#059669', '#10B981', '#059669'],
+                    duration: 600,
+                    easing: 'easeOutBack'
+                });
+            }
+            
+            // Show feedback modal
+            showFeedback(isCorrect, question);
+        }
+
+        // Show feedback modal
+        function showFeedback(isCorrect, question) {
+            const modal = document.getElementById('feedbackModal');
+            const content = document.getElementById('feedbackContent');
+            
+            const feedbackClass = isCorrect ? 'feedback-correct' : 'feedback-incorrect';
+            const icon = isCorrect ? '✅' : '❌';
+            const title = isCorrect ? 'Correct!' : 'Not quite!';
+            const message = isCorrect ? 
+                'Great job! You got it right.' : 
+                `The correct answer is: ${question.options[question.correct]}`;
+            
+            content.innerHTML = `
+                <div class="${feedbackClass} rounded-2xl p-6 text-center">
+                    <div class="text-6xl mb-4">${icon}</div>
+                    <h3 class="text-3xl font-bold mb-4 ${isCorrect ? 'text-green-700' : 'text-red-700'}">${title}</h3>
+                    <p class="text-lg text-gray-700 mb-6">${message}</p>
+                    <div class="bg-white rounded-xl p-4 text-left">
+                        <h4 class="font-semibold text-gray-800 mb-2">Explanation:</h4>
+                        <p class="text-gray-600">${question.explanation}</p>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            
+            anime({
+                targets: '#feedbackModal > div',
+                scale: [0.8, 1],
+                opacity: [0, 1],
+                duration: 500,
+                easing: 'easeOutBack'
+            });
+        }
+
+        // Next question
+        function nextQuestion() {
+            document.getElementById('feedbackModal').classList.add('hidden');
+            currentQuestionIndex++;
+            
+            setTimeout(() => {
+                displayQuestion();
+            }, 300);
+        }
+
+        // View explanation
+        function viewExplanation() {
+            // This would open a detailed explanation page or modal
+            alert('Detailed explanation would open here! 📚');
+        }
+
+        // Timer functions
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    timeRemaining--;
+                    updateTimerDisplay();
+                    
+                    if (timeRemaining <= 0) {
+                        clearInterval(timerInterval);
+                        showResults();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('timer').textContent = display;
+            
+            // Change color when time is running low
+            const timerElement = document.getElementById('timer');
+            if (timeRemaining <= 60) {
+                timerElement.classList.remove('text-orange-600');
+                timerElement.classList.add('text-red-600');
+            } else if (timeRemaining <= 120) {
+                timerElement.classList.remove('text-green-600');
+                timerElement.classList.add('text-orange-600');
+            }
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            const pauseModal = document.getElementById('pauseModal');
+            
+            if (isPaused) {
+                pauseBtn.textContent = '▶️ Resume';
+                pauseModal.classList.remove('hidden');
+                document.getElementById('questionCard').classList.add('quiz-paused');
+            } else {
+                pauseBtn.textContent = '⏸️ Pause';
+                pauseModal.classList.add('hidden');
+                document.getElementById('questionCard').classList.remove('quiz-paused');
+            }
+        }
+
+        function resumeQuiz() {
+            togglePause();
+        }
+
+        // Show results
+        function showResults() {
+            clearInterval(timerInterval);
+            
+            const modal = document.getElementById('resultsModal');
+            const content = document.getElementById('resultsContent');
+            
+            const percentage = Math.round((score / currentQuestions.length) * 100);
+            const timeSpent = Math.round((Date.now() - quizStartTime) / 1000);
+            const minutes = Math.floor(timeSpent / 60);
+            const seconds = timeSpent % 60;
+            
+            let message, emoji, grade;
+            if (percentage >= 90) {
+                message = "Outstanding! You're a transformation master!";
+                emoji = "🏆";
+                grade = "A+";
+            } else if (percentage >= 80) {
+                message = "Excellent work! You have a strong understanding.";
+                emoji = "🎉";
+                grade = "A";
+            } else if (percentage >= 70) {
+                message = "Good job! Keep practicing to improve.";
+                emoji = "👍";
+                grade = "B";
+            } else if (percentage >= 60) {
+                message = "Not bad! Review the material and try again.";
+                emoji = "📚";
+                grade = "C";
+            } else {
+                message = "Keep learning! Practice makes perfect.";
+                emoji = "💪";
+                grade = "D";
+            }
+            
+            content.innerHTML = `
+                <div class="text-6xl mb-4">${emoji}</div>
+                <h3 class="text-3xl font-bold text-gray-800 mb-4">Quiz Complete!</h3>
+                <div class="text-6xl font-bold text-green-600 mb-2">${percentage}%</div>
+                <div class="text-2xl text-gray-600 mb-4">Grade: ${grade}</div>
+                <p class="text-lg text-gray-700 mb-6">${message}</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-blue-50 rounded-xl p-4">
+                        <div class="text-2xl font-bold text-blue-600">${score}/${currentQuestions.length}</div>
+                        <div class="text-sm text-blue-800">Correct Answers</div>
+                    </div>
+                    <div class="bg-orange-50 rounded-xl p-4">
+                        <div class="text-2xl font-bold text-orange-600">${minutes}:${seconds.toString().padStart(2, '0')}</div>
+                        <div class="text-sm text-orange-800">Time Spent</div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            
+            anime({
+                targets: '#resultsModal > div',
+                scale: [0.8, 1],
+                opacity: [0, 1],
+                duration: 800,
+                easing: 'easeOutBack'
+            });
+            
+            // Update achievements
+            updateAchievements(percentage);
+        }
+
+        // Update achievements
+        function updateAchievements(percentage) {
+            // This would update the user's achievements based on quiz performance
+            console.log(`Quiz completed with ${percentage}% score`);
+            
+            // Example achievement unlocks
+            if (percentage >= 100) {
+                console.log('Achievement unlocked: Quiz Champion!');
+            }
+            if (percentage >= 80) {
+                console.log('Achievement unlocked: High Scorer!');
+            }
+        }
+
+        // Restart quiz
+        function restartQuiz() {
+            document.getElementById('resultsModal').classList.add('hidden');
+            timeRemaining = 300;
+            initQuiz();
+        }
+
+        // Quit quiz
+        function quitQuiz() {
+            if (confirm('Are you sure you want to quit the quiz? Your progress will be lost.')) {
+                navigateTo('index.html');
+            }
+        }
+
+        // Navigation
+        function navigateTo(page) {
+            clearInterval(timerInterval);
+            anime({
+                targets: 'body',
+                opacity: [1, 0.8],
+                duration: 300,
+                complete: () => {
+                    window.location.href = page;
+                }
+            });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initQuiz();
+            
+            // Animate entrance
+            anime({
+                targets: '.bg-white',
+                translateY: [50, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(200),
+                duration: 800,
+                easing: 'easeOutCubic'
+            });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key >= '1' && e.key <= '4') {
+                const optionIndex = parseInt(e.key) - 1;
+                if (optionIndex < document.querySelectorAll('.option-button').length) {
+                    selectAnswer(optionIndex);
+                }
+            } else if (e.key === 'Enter' && selectedAnswer !== null) {
+                submitAnswer();
+            } else if (e.key === 'Escape') {
+                if (!isPaused) {
+                    togglePause();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

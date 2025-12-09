@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapid Fire Mode - Stretch It Out!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Courier+New&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .math { font-family: 'Courier New', monospace; }
+        .rapid-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .rapid-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .option-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #E0E0E0;
+            cursor: pointer;
+        }
+        .option-card:hover {
+            border-color: #FF9800;
+            background-color: #FFF3E0;
+            transform: translateY(-2px);
+        }
+        .option-card.selected {
+            border-color: #FF9800;
+            background-color: #FF9800;
+            color: white;
+            transform: translateY(-2px);
+        }
+        .option-card.correct {
+            border-color: #4CAF50;
+            background-color: #4CAF50;
+            color: white;
+            animation: correctFlash 0.5s ease-out;
+        }
+        .option-card.incorrect {
+            border-color: #F44336;
+            background-color: #F44336;
+            color: white;
+            animation: incorrectShake 0.5s ease-in-out;
+        }
+        @keyframes correctFlash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+        .timer-urgent {
+            animation: urgentPulse 1s infinite;
+            color: #F44336;
+        }
+        @keyframes urgentPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        .streak-fire {
+            animation: fireGlow 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes fireGlow {
+            from { filter: drop-shadow(0 0 5px rgba(255, 152, 0, 0.5)); }
+            to { filter: drop-shadow(0 0 15px rgba(255, 152, 0, 0.8)); }
+        }
+        .power-up-glow {
+            animation: powerUpGlow 2s ease-in-out infinite alternate;
+        }
+        @keyframes powerUpGlow {
+            from { box-shadow: 0 0 10px rgba(156, 39, 176, 0.3); }
+            to { box-shadow: 0 0 20px rgba(156, 39, 176, 0.6); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+    <!-- Home Button -->
+    <button onclick="navigateTo('index.html')" class="fixed top-4 left-4 w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center hover:bg-orange-700 transition-all duration-300 z-50 shadow-lg">
+        <span class="text-lg">🏠</span>
+    </button>
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-orange-600 to-red-600 text-white py-8">
+        <div class="container mx-auto px-8">
+            <h1 class="text-5xl font-bold text-center mb-4">⚡ Rapid Fire Mode</h1>
+            <p class="text-center text-orange-100 text-xl">Test your speed and accuracy!</p>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="container mx-auto px-8 py-6">
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div>
+                    <div class="text-3xl font-bold text-orange-600" id="timer">30</div>
+                    <div class="text-sm text-gray-600">Seconds</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-red-600 streak-fire" id="streak">0</div>
+                    <div class="text-sm text-gray-600">Streak 🔥</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-blue-600" id="score">0</div>
+                    <div class="text-sm text-gray-600">Score</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-green-600" id="correct">0</div>
+                    <div class="text-sm text-gray-600">Correct</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="rapid-card rounded-3xl shadow-xl p-8 mb-8" id="questionCard">
+            <div class="text-center mb-6">
+                <div class="text-sm text-gray-500 mb-2">Question <span id="questionNumber">1</span></div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-6" id="questionText">
+                    Which equation represents a vertical stretch by factor 3?
+                </h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="optionsContainer">
+                <!-- Options will be generated by JavaScript -->
+            </div>
+            
+            <div class="text-center mt-8">
+                <div class="text-sm text-gray-500 mb-2">Select an answer quickly!</div>
+                <div class="text-xs text-gray-400">Use number keys 1-4 for faster selection</div>
+            </div>
+        </div>
+
+        <!-- Speed Controls -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Speed Settings</h3>
+            <div class="flex justify-center space-x-4">
+                <button onclick="setSpeed('slow')" id="slowBtn" class="bg-green-200 hover:bg-green-300 text-green-800 px-6 py-3 rounded-full font-semibold transition-colors">
+                    🐌 Slow (45s)
+                </button>
+                <button onclick="setSpeed('normal')" id="normalBtn" class="bg-orange-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
+                    ⚡ Normal (30s)
+                </button>
+                <button onclick="setSpeed('fast')" id="fastBtn" class="bg-red-200 hover:bg-red-300 text-red-800 px-6 py-3 rounded-full font-semibold transition-colors">
+                    🚀 Fast (15s)
+                </button>
+            </div>
+        </div>
+
+        <!-- Power-ups -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Power-ups</h3>
+            <div class="flex justify-center space-x-6">
+                <button onclick="usePowerUp('fifty')" id="fiftyBtn" class="bg-purple-200 hover:bg-purple-300 text-purple-800 px-6 py-3 rounded-full font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    50/50
+                </button>
+                <button onclick="usePowerUp('time')" id="timeBtn" class="bg-blue-200 hover:bg-blue-300 text-blue-800 px-6 py-3 rounded-full font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    ⏰ +10s
+                </button>
+                <button onclick="usePowerUp('hint')" id="hintBtn" class="bg-green-200 hover:bg-green-300 text-green-800 px-6 py-3 rounded-full font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    💡 Hint
+                </button>
+            </div>
+            <div class="text-center mt-4">
+                <div class="text-sm text-gray-600">
+                    Unlock power-ups by maintaining streaks!
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-center space-x-4">
+            <button onclick="pauseGame()" id="pauseBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-full font-semibold transition-colors">
+                ⏸️ Pause
+            </button>
+            <button onclick="quitGame()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-semibold transition-colors">
+                🚪 Quit
+            </button>
+            <button onclick="navigateTo('study-guide.html')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full font-semibold transition-colors">
+                📖 Study Guide
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
+            <div class="text-6xl mb-4" id="gameOverIcon">⚡</div>
+            <h3 class="text-3xl font-bold text-gray-800 mb-4" id="gameOverTitle">Game Complete!</h3>
+            <div class="space-y-4 mb-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 rounded-xl p-4">
+                        <div class="text-2xl font-bold text-blue-600" id="finalScore">0</div>
+                        <div class="text-sm text-blue-800">Final Score</div>
+                    </div>
+                    <div class="bg-orange-50 rounded-xl p-4">
+                        <div class="text-2xl font-bold text-orange-600" id="finalStreak">0</div>
+                        <div class="text-sm text-orange-800">Best Streak</div>
+                    </div>
+                </div>
+                <div class="bg-green-50 rounded-xl p-4">
+                    <div class="text-2xl font-bold text-green-600" id="finalAccuracy">0%</div>
+                    <div class="text-sm text-green-800">Accuracy</div>
+                </div>
+            </div>
+            <div class="flex space-x-4">
+                <button onclick="restartGame()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl font-semibold transition-colors">
+                    🔄 Play Again
+                </button>
+                <button onclick="navigateTo('achievements.html')" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-semibold transition-colors">
+                    🏆 Achievements
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            currentQuestion: 0,
+            score: 0,
+            streak: 0,
+            bestStreak: 0,
+            correct: 0,
+            total: 0,
+            timeRemaining: 30,
+            speed: 'normal',
+            isPlaying: false,
+            isPaused: false,
+            powerUps: {
+                fifty: false,
+                time: false,
+                hint: false
+            }
+        };
+
+        // Question bank subset for rapid fire
+        const rapidQuestions = [
+            { question: "y = 3f(x) represents:", options: ["Vertical stretch by 3", "Horizontal stretch by 3", "Vertical shrink by 3", "Horizontal shrink by 3"], correct: 0, explanation: "Multiplying outside the function stretches vertically" },
+            { question: "y = f(2x) represents:", options: ["Horizontal stretch by 2", "Horizontal shrink by 1/2", "Vertical stretch by 2", "Vertical shrink by 1/2"], correct: 1, explanation: "Multiplying inside by 2 shrinks horizontally by 1/2" },
+            { question: "y = 0.5f(x) represents:", options: ["Vertical stretch by 0.5", "Vertical shrink by 0.5", "Horizontal stretch by 0.5", "Horizontal shrink by 0.5"], correct: 1, explanation: "Multiplying by 0.5 shrinks vertically" },
+            { question: "y = f(x/3) represents:", options: ["Horizontal stretch by 3", "Horizontal shrink by 3", "Vertical stretch by 3", "Vertical shrink by 3"], correct: 0, explanation: "Dividing inside by 3 stretches horizontally" },
+            { question: "In y = 4sin(2x), the vertical factor is:", options: ["2", "4", "1/2", "1/4"], correct: 1, explanation: "The 4 multiplies the function (outside)" },
+            { question: "In y = 4sin(2x), the horizontal factor is:", options: ["2", "4", "1/2", "1/4"], correct: 0, explanation: "The 2 multiplies the input (inside)" },
+            { question: "y = sin(0.5x) represents:", options: ["Horizontal stretch by 2", "Horizontal shrink by 2", "Vertical stretch by 2", "Vertical shrink by 2"], correct: 0, explanation: "Multiplying by 0.5 stretches horizontally by 2" },
+            { question: "y = 2f(x/4) has how many transformations?", options: ["1", "2", "3", "4"], correct: 1, explanation: "Two transformations: vertical stretch by 2, horizontal stretch by 4" },
+            { question: "The period of y = sin(3x) is:", options: ["2π/3", "2π", "3π", "π/3"], correct: 0, explanation: "Period = 2π/b = 2π/3" },
+            { question: "y = f(0.25x) represents:", options: ["Horizontal stretch by 4", "Horizontal shrink by 4", "Vertical stretch by 4", "Vertical shrink by 4"], correct: 0, explanation: "Multiplying by 0.25 stretches horizontally by 4" }
+        ];
+
+        let currentQuestionIndex = 0;
+        let timerInterval = null;
+        let selectedAnswer = null;
+
+        // Initialize game
+        function initGame() {
+            resetGame();
+            loadQuestion();
+            startTimer();
+            updateUI();
+        }
+
+        // Reset game state
+        function resetGame() {
+            gameState = {
+                currentQuestion: 0,
+                score: 0,
+                streak: 0,
+                bestStreak: 0,
+                correct: 0,
+                total: 0,
+                timeRemaining: getTimeForSpeed('normal'),
+                speed: 'normal',
+                isPlaying: true,
+                isPaused: false,
+                powerUps: {
+                    fifty: false,
+                    time: false,
+                    hint: false
+                }
+            };
+        }
+
+        // Get time for speed setting
+        function getTimeForSpeed(speed) {
+            switch(speed) {
+                case 'slow': return 45;
+                case 'normal': return 30;
+                case 'fast': return 15;
+                default: return 30;
+            }
+        }
+
+        // Load current question
+        function loadQuestion() {
+            if (currentQuestionIndex >= rapidQuestions.length) {
+                endGame();
+                return;
+            }
+
+            const question = rapidQuestions[currentQuestionIndex];
+            
+            // Update question number
+            document.getElementById('questionNumber').textContent = currentQuestionIndex + 1;
+            document.getElementById('questionText').textContent = question.question;
+            
+            // Generate options
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const optionCard = document.createElement('button');
+                optionCard.className = 'option-card bg-white p-4 rounded-xl text-left transition-all';
+                optionCard.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600">
+                            ${String.fromCharCode(65 + index)}
+                        </div>
+                        <div class="font-medium text-gray-800">${option}</div>
+                    </div>
+                `;
+                optionCard.onclick = () => selectAnswer(index);
+                container.appendChild(optionCard);
+            });
+            
+            // Reset selection
+            selectedAnswer = null;
+            
+            // Animate question entrance
+            anime({
+                targets: '#questionCard',
+                scale: [0.95, 1],
+                opacity: [0.8, 1],
+                duration: 400,
+                easing: 'easeOutCubic'
+            });
+        }
+
+        // Select answer
+        function selectAnswer(index) {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            
+            selectedAnswer = index;
+            
+            // Clear previous selection
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Select new answer
+            const selectedCard = document.querySelectorAll('.option-card')[index];
+            selectedCard.classList.add('selected');
+            
+            // Animate selection
+            anime({
+                targets: selectedCard,
+                scale: [1, 1.02, 1],
+                duration: 300,
+                easing: 'easeOutCubic'
+            });
+            
+            // Auto-submit after selection
+            setTimeout(() => {
+                submitAnswer();
+            }, 200);
+        }
+
+        // Submit answer
+        function submitAnswer() {
+            if (selectedAnswer === null) return;
+            
+            const question = rapidQuestions[currentQuestionIndex];
+            const isCorrect = selectedAnswer === question.correct;
+            
+            // Update stats
+            gameState.total++;
+            if (isCorrect) {
+                gameState.correct++;
+                gameState.score += 10 + Math.max(0, gameState.streak * 2); // Bonus for streak
+                gameState.streak++;
+                gameState.bestStreak = Math.max(gameState.bestStreak, gameState.streak);
+                
+                // Check for power-up unlocks
+                if (gameState.streak >= 3 && !gameState.powerUps.fifty) {
+                    gameState.powerUps.fifty = true;
+                    document.getElementById('fiftyBtn').disabled = false;
+                }
+                if (gameState.streak >= 5 && !gameState.powerUps.time) {
+                    gameState.powerUps.time = true;
+                    document.getElementById('timeBtn').disabled = false;
+                }
+                if (gameState.streak >= 7 && !gameState.powerUps.hint) {
+                    gameState.powerUps.hint = true;
+                    document.getElementById('hintBtn').disabled = false;
+                }
+            } else {
+                gameState.streak = 0;
+            }
+            
+            // Show feedback
+            showFeedback(isCorrect, question);
+            
+            // Update UI
+            updateUI();
+            
+            // Load next question after delay
+            setTimeout(() => {
+                currentQuestionIndex++;
+                loadQuestion();
+            }, 1500);
+        }
+
+        // Show feedback
+        function showFeedback(isCorrect, question) {
+            const options = document.querySelectorAll('.option-card');
+            
+            options.forEach((option, index) => {
+                if (index === question.correct) {
+                    option.classList.add('correct');
+                } else if (index === selectedAnswer && !isCorrect) {
+                    option.classList.add('incorrect');
+                }
+            });
+            
+            // Show explanation
+            if (!isCorrect) {
+                const explanation = document.createElement('div');
+                explanation.className = 'mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm';
+                explanation.textContent = question.explanation;
+                document.getElementById('questionCard').appendChild(explanation);
+                
+                setTimeout(() => {
+                    explanation.remove();
+                }, 1400);
+            }
+        }
+
+        // Timer functions
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!gameState.isPaused && gameState.isPlaying) {
+                    gameState.timeRemaining--;
+                    updateTimer();
+                    
+                    if (gameState.timeRemaining <= 0) {
+                        clearInterval(timerInterval);
+                        submitAnswer(); // Auto-submit when time runs out
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            const timerElement = document.getElementById('timer');
+            timerElement.textContent = gameState.timeRemaining;
+            
+            // Change color based on time remaining
+            timerElement.classList.remove('timer-urgent');
+            if (gameState.timeRemaining <= 5) {
+                timerElement.classList.add('timer-urgent');
+            }
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('streak').textContent = gameState.streak;
+            document.getElementById('correct').textContent = gameState.correct;
+            
+            // Update streak styling
+            const streakElement = document.getElementById('streak');
+            if (gameState.streak >= 5) {
+                streakElement.classList.add('streak-fire');
+            } else {
+                streakElement.classList.remove('streak-fire');
+            }
+        }
+
+        // Speed controls
+        function setSpeed(speed) {
+            gameState.speed = speed;
+            gameState.timeRemaining = getTimeForSpeed(speed);
+            
+            // Update button states
+            document.querySelectorAll('[id$="Btn"]').forEach(btn => {
+                btn.classList.remove('bg-orange-500', 'text-white', 'shadow-lg');
+                btn.classList.add('bg-orange-200', 'text-orange-800');
+            });
+            
+            const activeBtn = document.getElementById(`${speed}Btn`);
+            activeBtn.classList.remove('bg-orange-200', 'text-orange-800');
+            activeBtn.classList.add('bg-orange-500', 'text-white', 'shadow-lg');
+            
+            updateTimer();
+        }
+
+        // Power-ups
+        function usePowerUp(type) {
+            if (!gameState.powerUps[type] || !gameState.isPlaying || gameState.isPaused) return;
+            
+            switch(type) {
+                case 'fifty':
+                    // Remove 2 incorrect options
+                    const options = document.querySelectorAll('.option-card');
+                    const incorrectIndices = [];
+                    options.forEach((option, index) => {
+                        if (index !== rapidQuestions[currentQuestionIndex].correct) {
+                            incorrectIndices.push(index);
+                        }
+                    });
+                    
+                    // Remove 2 random incorrect options
+                    const toRemove = Utils.shuffle(incorrectIndices).slice(0, 2);
+                    toRemove.forEach(index => {
+                        options[index].style.opacity = '0.3';
+                        options[index].style.pointerEvents = 'none';
+                    });
+                    
+                    gameState.powerUps.fifty = false;
+                    document.getElementById('fiftyBtn').disabled = true;
+                    break;
+                    
+                case 'time':
+                    gameState.timeRemaining += 10;
+                    updateTimer();
+                    gameState.powerUps.time = false;
+                    document.getElementById('timeBtn').disabled = true;
+                    break;
+                    
+                case 'hint':
+                    const question = rapidQuestions[currentQuestionIndex];
+                    showNotification(question.explanation, 'info');
+                    gameState.powerUps.hint = false;
+                    document.getElementById('hintBtn').disabled = true;
+                    break;
+            }
+        }
+
+        // Game controls
+        function pauseGame() {
+            gameState.isPaused = !gameState.isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            pauseBtn.textContent = gameState.isPaused ? '▶️ Resume' : '⏸️ Pause';
+        }
+
+        function quitGame() {
+            if (confirm('Are you sure you want to quit? Your progress will be lost.')) {
+                clearInterval(timerInterval);
+                navigateTo('index.html');
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('gameOverModal').classList.add('hidden');
+            initGame();
+        }
+
+        // End game
+        function endGame() {
+            gameState.isPlaying = false;
+            clearInterval(timerInterval);
+            
+            const accuracy = gameState.total > 0 ? Math.round((gameState.correct / gameState.total) * 100) : 0;
+            
+            // Update final stats
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('finalStreak').textContent = gameState.bestStreak;
+            document.getElementById('finalAccuracy').textContent = accuracy + '%';
+            
+            // Show game over modal
+            document.getElementById('gameOverModal').classList.remove('hidden');
+            
+            anime({
+                targets: '#gameOverModal > div',
+                scale: [0.8, 1],
+                opacity: [0, 1],
+                duration: 500,
+                easing: 'easeOutBack'
+            });
+            
+            // Update achievements
+            updateAchievements();
+        }
+
+        // Update achievements
+        function updateAchievements() {
+            // This would update the user's achievements based on game performance
+            console.log(`Game completed: Score ${gameState.score}, Best Streak ${gameState.bestStreak}`);
+            
+            // Example achievement unlocks
+            if (gameState.bestStreak >= 10) {
+                console.log('Achievement unlocked: Speed Demon!');
+            }
+            if (gameState.score >= 500) {
+                console.log('Achievement unlocked: High Scorer!');
+            }
+        }
+
+        // Utility functions
+        const Utils = {
+            shuffle: (array) => {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+        };
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg text-white font-semibold transform translate-x-full transition-transform duration-300`;
+            
+            switch(type) {
+                case 'success':
+                    notification.classList.add('bg-green-500');
+                    break;
+                case 'error':
+                    notification.classList.add('bg-red-500');
+                    break;
+                case 'info':
+                    notification.classList.add('bg-blue-500');
+                    break;
+                default:
+                    notification.classList.add('bg-purple-500');
+            }
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Navigation
+        function navigateTo(page) {
+            anime({
+                targets: 'body',
+                opacity: [1, 0.8],
+                duration: 300,
+                complete: () => {
+                    window.location.href = page;
+                }
+            });
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            
+            if (e.key >= '1' && e.key <= '4') {
+                const optionIndex = parseInt(e.key) - 1;
+                const options = document.querySelectorAll('.option-card');
+                if (optionIndex < options.length) {
+                    selectAnswer(optionIndex);
+                }
+            } else if (e.key === 'Escape') {
+                pauseGame();
+            }
+        });
+
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+            
+            // Animate entrance
+            anime({
+                targets: '.rapid-card, .bg-white',
+                translateY: [50, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(200),
+                duration: 800,
+                easing: 'easeOutCubic'
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stretch It Out! - Interactive Math Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Courier+New&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .math { font-family: 'Courier New', monospace; }
+        .hero-gradient { background: linear-gradient(135deg, #1E88E5 0%, #42A5F5 50%, #64B5F6 100%); }
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }
+        .btn-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-hover:hover { transform: scale(1.05); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
+        .btn-hover:active { transform: scale(0.98); }
+        .progress-ring { transform: rotate(-90deg); }
+        .morphing-curve { animation: morph 3s ease-in-out infinite; }
+        @keyframes morph {
+            0%, 100% { d: path("M 0,0 Q 150,-50 300,0 T 600,0"); }
+            25% { d: path("M 0,0 Q 150,-100 300,0 T 600,0"); }
+            50% { d: path("M 0,0 Q 75,-50 300,0 T 600,0"); }
+            75% { d: path("M 0,0 Q 150,-25 300,0 T 600,0"); }
+        }
+        .glow { animation: glow 2s ease-in-out infinite alternate; }
+        @keyframes glow {
+            from { box-shadow: 0 0 20px rgba(255, 202, 40, 0.3); }
+            to { box-shadow: 0 0 30px rgba(255, 202, 40, 0.6); }
+        }
+    </style>
+</head>
+<body class="min-h-screen hero-gradient">
+    <!-- Home Button (Hidden on Home) -->
+    <button id="homeBtn" class="fixed top-4 left-4 w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white hover:bg-opacity-30 transition-all duration-300 z-50 opacity-0 cursor-default">
+        <span class="text-lg">🏠</span>
+    </button>
+
+    <!-- Progress Ring (Top Right) -->
+    <div class="fixed top-6 right-6 z-50">
+        <div class="relative w-16 h-16">
+            <svg class="w-16 h-16 progress-ring" viewBox="0 0 36 36">
+                <path class="text-white text-opacity-20" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <path id="progressPath" class="text-yellow-400" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span id="progressText" class="text-white text-xs font-bold">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-8 pt-16 pb-8">
+        <!-- App Title -->
+        <div class="text-center mb-4">
+            <h1 class="text-6xl font-bold text-white mb-4" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                Stretch It Out!
+            </h1>
+            <p class="text-xl text-white text-opacity-90 italic mb-8" id="subtitle">
+                Master function transformations through play!
+            </p>
+        </div>
+
+        <!-- Animated Hero Graph -->
+        <div class="flex justify-center mb-12">
+            <div class="bg-white bg-opacity-10 rounded-3xl p-8 backdrop-blur-sm" style="width: 600px; height: 300px;">
+                <div id="heroGraph" class="w-full h-full"></div>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex flex-col items-center space-y-6 mb-16">
+            <button onclick="navigateTo('concepts.html')" class="btn-hover bg-gradient-to-r from-blue-600 to-blue-700 text-white px-12 py-4 rounded-full text-lg font-semibold shadow-lg" style="width: 280px; height: 60px;">
+                🧠 Learn the Concept
+            </button>
+            <button onclick="navigateTo('graph-lab.html')" class="btn-hover bg-gradient-to-r from-green-600 to-green-700 text-white px-12 py-4 rounded-full text-lg font-semibold shadow-lg" style="width: 280px; height: 60px;">
+                🔧 Interactive Lab
+            </button>
+
+            <button onclick="navigateTo('achievements.html')" class="btn-hover bg-gradient-to-r from-purple-600 to-purple-700 text-white px-12 py-4 rounded-full text-lg font-semibold shadow-lg" style="width: 280px; height: 60px;">
+                🏆 My Achievements
+            </button>
+        </div>
+
+        <!-- Language Toggle -->
+        <div class="flex justify-end mb-8">
+            <div class="bg-white bg-opacity-20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <div class="flex space-x-2 text-white text-sm">
+                    <button class="px-3 py-1 rounded-full bg-white bg-opacity-30 font-semibold">EN</button>
+                    <button class="px-3 py-1 rounded-full hover:bg-white hover:bg-opacity-20 transition-all">中文</button>
+                    <button class="px-3 py-1 rounded-full hover:bg-white hover:bg-opacity-20 transition-all">Español</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-white text-opacity-70 text-sm">
+            <p>Made by the Function Transformers Team — Math Interactive Project 2024</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize hero graph
+        function initHeroGraph() {
+            const chart = echarts.init(document.getElementById('heroGraph'));
+            
+            const functions = [
+                { name: 'sin(x)', color: '#000000', data: [] },
+                { name: '2sin(x)', color: '#2196F3', data: [] },
+                { name: 'sin(2x)', color: '#43A047', data: [] },
+                { name: '0.5sin(x)', color: '#FF9800', data: [] },
+                { name: 'sin(x/2)', color: '#9C27B0', data: [] }
+            ];
+
+            // Generate data for each function
+            for (let i = 0; i < functions.length; i++) {
+                for (let x = 0; x <= 6.28; x += 0.1) {
+                    let y;
+                    switch(i) {
+                        case 0: y = Math.sin(x); break;
+                        case 1: y = 2 * Math.sin(x); break;
+                        case 2: y = Math.sin(2 * x); break;
+                        case 3: y = 0.5 * Math.sin(x); break;
+                        case 4: y = Math.sin(x / 2); break;
+                    }
+                    functions[i].data.push([x, y]);
+                }
+            }
+
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    top: '10%',
+                    bottom: '10%'
+                },
+                xAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 6.28,
+                    axisLine: { lineStyle: { color: '#FFFFFF' } },
+                    axisLabel: { color: '#FFFFFF' },
+                    splitLine: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    min: -2.5,
+                    max: 2.5,
+                    axisLine: { lineStyle: { color: '#FFFFFF' } },
+                    axisLabel: { color: '#FFFFFF' },
+                    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+                },
+                series: functions.map((func, index) => ({
+                    name: func.name,
+                    type: 'line',
+                    data: func.data,
+                    lineStyle: { 
+                        color: func.color, 
+                        width: 3,
+                        opacity: index === 0 ? 0.7 : 0
+                    },
+                    symbol: 'none',
+                    animationDuration: 1000,
+                    animationEasing: 'cubicOut'
+                })),
+                animation: true,
+                animationDuration: 1000
+            };
+
+            chart.setOption(option);
+
+            // Animate through functions
+            let currentIndex = 0;
+            setInterval(() => {
+                const newOption = {
+                    series: functions.map((func, index) => ({
+                        lineStyle: { 
+                            color: func.color, 
+                            width: 3,
+                            opacity: index === currentIndex ? 0.9 : (index === 0 ? 0.3 : 0)
+                        }
+                    }))
+                };
+                chart.setOption(newOption);
+                currentIndex = (currentIndex + 1) % functions.length;
+            }, 3000);
+        }
+
+        // Initialize typed text effect
+        function initTypedText() {
+            new Typed('#subtitle', {
+                strings: [
+                    'Master function transformations through play!',
+                    'Explore vertical and horizontal stretches!',
+                    'Visualize mathematical concepts in action!',
+                    'Transform functions intuitively and visually!'
+                ],
+                typeSpeed: 50,
+                backSpeed: 30,
+                backDelay: 2000,
+                loop: true,
+                showCursor: false
+            });
+        }
+
+        // Progress ring animation
+        function animateProgress() {
+            const progress = 0; // Will be updated based on actual progress
+            const circumference = 2 * Math.PI * 15.9155;
+            const offset = circumference - (progress / 100) * circumference;
+            
+            anime({
+                targets: '#progressPath',
+                strokeDasharray: `${progress}, 100`,
+                duration: 2000,
+                easing: 'easeOutCubic'
+            });
+
+            anime({
+                targets: '#progressText',
+                innerHTML: [0, progress],
+                duration: 2000,
+                round: 1,
+                easing: 'easeOutCubic'
+            });
+        }
+
+        // Navigation function
+        function navigateTo(page) {
+            // Add loading animation
+            anime({
+                targets: 'body',
+                opacity: [1, 0.8],
+                duration: 300,
+                complete: () => {
+                    window.location.href = page;
+                }
+            });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initHeroGraph();
+            initTypedText();
+            animateProgress();
+
+            // Animate buttons on load
+            anime({
+                targets: '.btn-hover',
+                translateY: [50, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(200, {start: 1000}),
+                duration: 800,
+                easing: 'easeOutCubic'
+            });
+
+            // Animate progress ring entrance
+            anime({
+                targets: '.fixed.top-6.right-6',
+                scale: [0, 1],
+                rotate: [180, 0],
+                delay: 1500,
+                duration: 1000,
+                easing: 'easeOutBack'
+            });
+        });
+
+        // Language toggle functionality
+        document.querySelectorAll('[data-lang]').forEach(button => {
+            button.addEventListener('click', function() {
+                const lang = this.dataset.lang;
+                // Language switching logic would go here
+                console.log('Switching to language:', lang);
+            });
+        });
+    </script>
+</body>
+</html>

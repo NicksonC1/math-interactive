@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Graph Lab - Stretch It Out!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Courier+New&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .math { font-family: 'Courier New', monospace; }
+        .slider-track { 
+            background: linear-gradient(90deg, var(--start-color), var(--end-color));
+            height: 12px; 
+            border-radius: 6px; 
+        }
+        .slider-thumb { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 50%; 
+            background: white; 
+            border: 4px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .slider-thumb:hover { transform: scale(1.2); }
+        .slider-thumb:active { transform: scale(0.95); }
+        .btn-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-hover:hover { transform: scale(1.05); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
+        .btn-hover:active { transform: scale(0.98); }
+        .equation-display { 
+            background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .function-btn { transition: all 0.3s; }
+        .function-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .function-btn.active { 
+            background: linear-gradient(135deg, #1976D2, #1565C0); 
+            color: white; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <!-- Home Button -->
+    <button onclick="navigateTo('index.html')" class="fixed top-4 left-4 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-all duration-300 z-50 shadow-lg">
+        <span class="text-lg">🏠</span>
+    </button>
+
+    <!-- Header -->
+    <div class="bg-blue-600 text-white py-6">
+        <div class="container mx-auto px-8">
+            <h1 class="text-3xl font-bold text-center">Interactive Graph Lab: y = a·f(b·x)</h1>
+        </div>
+    </div>
+
+    <!-- Current Function Display -->
+    <div class="absolute top-20 right-6 z-40">
+        <div class="equation-display rounded-xl px-6 py-4 shadow-lg">
+            <div class="text-sm text-gray-600 mb-1">Current Function:</div>
+            <div class="math text-lg font-bold text-gray-800" id="currentFunction">sin(x)</div>
+            <button onclick="showFunctionSelector()" class="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium">Change</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-8 py-8">
+        <!-- Graph Area -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="relative">
+                <!-- Live Equation Display -->
+                <div class="absolute top-4 right-4 z-30">
+                    <div class="equation-display rounded-lg px-4 py-2 shadow-md">
+                        <div class="math text-base font-bold" id="liveEquation">y = 1.00 · sin(1.00·x)</div>
+                    </div>
+                </div>
+                
+                <!-- Main Graph -->
+                <div id="mainGraph" class="w-full h-96"></div>
+                
+                <!-- Coordinate Tracer -->
+                <div id="tracer" class="absolute w-4 h-4 bg-red-500 rounded-full pointer-events-none z-20 opacity-0 transition-opacity duration-200">
+                    <div id="tooltip" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 transition-opacity duration-200">
+                        <span id="tooltipText">(0, 0)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Vertical Controls -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h3 class="text-xl font-bold text-blue-600 mb-6 text-center">Vertical Factor (a)</h3>
+                
+                <!-- Slider -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <label class="text-gray-700 font-medium">Adjust Vertical Stretch</label>
+                        <div class="bg-blue-50 border-2 border-blue-500 rounded-lg px-3 py-1">
+                            <span id="verticalValue" class="text-blue-600 font-bold">1.0</span>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="slider-track" style="--start-color: #64B5F6; --end-color: #1E88E5;"></div>
+                        <input type="range" id="verticalSlider" min="0.1" max="5" step="0.1" value="1" 
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div class="absolute top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <div id="verticalThumb" class="slider-thumb" style="--border-color: #1976D2;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preset Buttons -->
+                <div class="grid grid-cols-5 gap-2">
+                    <button onclick="setVerticalValue(0.25)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">¼</button>
+                    <button onclick="setVerticalValue(0.5)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">½</button>
+                    <button onclick="setVerticalValue(1)" class="bg-blue-500 text-white py-2 px-3 rounded-lg text-sm font-medium border-2 border-blue-600">1</button>
+                    <button onclick="setVerticalValue(2)" class="bg-blue-200 hover:bg-blue-300 text-blue-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">2</button>
+                    <button onclick="setVerticalValue(3)" class="bg-blue-200 hover:bg-blue-300 text-blue-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">3</button>
+                </div>
+            </div>
+
+            <!-- Horizontal Controls -->
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <h3 class="text-xl font-bold text-green-600 mb-6 text-center">Horizontal Factor (b)</h3>
+                
+                <!-- Slider -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <label class="text-gray-700 font-medium">Adjust Horizontal Stretch</label>
+                        <div class="bg-green-50 border-2 border-green-500 rounded-lg px-3 py-1">
+                            <span id="horizontalValue" class="text-green-600 font-bold">1.0</span>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="slider-track" style="--start-color: #A5D6A7; --end-color: #43A047;"></div>
+                        <input type="range" id="horizontalSlider" min="0.1" max="5" step="0.1" value="1" 
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div class="absolute top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <div id="horizontalThumb" class="slider-thumb" style="--border-color: #43A047;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preset Buttons -->
+                <div class="grid grid-cols-5 gap-2">
+                    <button onclick="setHorizontalValue(0.25)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">¼</button>
+                    <button onclick="setHorizontalValue(0.5)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">½</button>
+                    <button onclick="setHorizontalValue(1)" class="bg-green-500 text-white py-2 px-3 rounded-lg text-sm font-medium border-2 border-green-600">1</button>
+                    <button onclick="setHorizontalValue(2)" class="bg-green-200 hover:bg-green-300 text-green-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">2</button>
+                    <button onclick="setHorizontalValue(3)" class="bg-green-200 hover:bg-green-300 text-green-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors">3</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <button onclick="resetGraph()" class="btn-hover bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
+                🔁 Reset Graph
+            </button>
+            <button onclick="navigateTo('hints.html')" class="btn-hover bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
+                🧩 Step-by-Step Hints
+            </button>
+            <button onclick="navigateTo('quiz.html')" class="btn-hover bg-yellow-500 hover:bg-yellow-600 text-gray-800 px-6 py-3 rounded-full font-semibold shadow-lg">
+                💡 Quiz Me
+            </button>
+            <button onclick="startChallenge()" class="btn-hover bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
+                🎯 Challenge Mode
+            </button>
+        </div>
+    </div>
+
+    <!-- Function Selector Modal -->
+    <div id="functionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Select Function</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="selectFunction('sin(x)')" class="function-btn bg-gray-100 hover:bg-gray-200 p-4 rounded-xl text-center">
+                    <div class="math text-lg font-bold">sin(x)</div>
+                    <div class="text-sm text-gray-600 mt-1">Sine Wave</div>
+                </button>
+                <button onclick="selectFunction('cos(x)')" class="function-btn bg-gray-100 hover:bg-gray-200 p-4 rounded-xl text-center">
+                    <div class="math text-lg font-bold">cos(x)</div>
+                    <div class="text-sm text-gray-600 mt-1">Cosine Wave</div>
+                </button>
+                <button onclick="selectFunction('x²')" class="function-btn bg-gray-100 hover:bg-gray-200 p-4 rounded-xl text-center">
+                    <div class="math text-lg font-bold">x²</div>
+                    <div class="text-sm text-gray-600 mt-1">Quadratic</div>
+                </button>
+                <button onclick="selectFunction('√x')" class="function-btn bg-gray-100 hover:bg-gray-200 p-4 rounded-xl text-center">
+                    <div class="math text-lg font-bold">√x</div>
+                    <div class="text-sm text-gray-600 mt-1">Square Root</div>
+                </button>
+                <button onclick="selectFunction('|x|')" class="function-btn bg-gray-100 hover:bg-gray-200 p-4 rounded-xl text-center">
+                    <div class="math text-lg font-bold">|x|</div>
+                    <div class="text-sm text-gray-600 mt-1">Absolute Value</div>
+                </button>
+                <button onclick="selectFunction('1/x')" class="function-btn bg-gray-100 hover:bg-gray-200 p-4 rounded-xl text-center">
+                    <div class="math text-lg font-bold">1/x</div>
+                    <div class="text-sm text-gray-600 mt-1">Reciprocal</div>
+                </button>
+            </div>
+            <button onclick="hideFunctionSelector()" class="w-full mt-6 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-xl font-semibold transition-colors">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentFunctionName = 'sin(x)';
+        let verticalFactor = 1.0;
+        let horizontalFactor = 1.0;
+        let chart;
+
+        // Initialize the graph
+        function initGraph() {
+            chart = echarts.init(document.getElementById('mainGraph'));
+            updateGraph();
+            setupMouseTracking();
+        }
+
+        // Update graph based on current factors
+        function updateGraph() {
+            const baseData = [];
+            const transformedData = [];
+            
+            // Generate data points
+            for (let x = -10; x <= 10; x += 0.1) {
+                let baseY, transformedY;
+                
+                switch(currentFunctionName) {
+                    case 'sin(x)':
+                        baseY = Math.sin(x);
+                        transformedY = verticalFactor * Math.sin(horizontalFactor * x);
+                        break;
+                    case 'cos(x)':
+                        baseY = Math.cos(x);
+                        transformedY = verticalFactor * Math.cos(horizontalFactor * x);
+                        break;
+                    case 'x²':
+                        baseY = x * x;
+                        transformedY = verticalFactor * (horizontalFactor * x) * (horizontalFactor * x);
+                        break;
+                    case '√x':
+                        baseY = x >= 0 ? Math.sqrt(x) : NaN;
+                        transformedY = x >= 0 ? verticalFactor * Math.sqrt(horizontalFactor * x) : NaN;
+                        break;
+                    case '|x|':
+                        baseY = Math.abs(x);
+                        transformedY = verticalFactor * Math.abs(horizontalFactor * x);
+                        break;
+                    case '1/x':
+                        baseY = x !== 0 ? 1/x : NaN;
+                        transformedY = x !== 0 ? verticalFactor * (1/(horizontalFactor * x)) : NaN;
+                        break;
+                    default:
+                        baseY = Math.sin(x);
+                        transformedY = verticalFactor * Math.sin(horizontalFactor * x);
+                }
+                
+                if (!isNaN(baseY)) {
+                    baseData.push([x, baseY]);
+                }
+                if (!isNaN(transformedY)) {
+                    transformedData.push([x, transformedY]);
+                }
+            }
+
+            const option = {
+                backgroundColor: 'transparent',
+                grid: {
+                    left: '10%',
+                    right: '10%',
+                    top: '10%',
+                    bottom: '15%'
+                },
+                xAxis: {
+                    type: 'value',
+                    min: -10,
+                    max: 10,
+                    axisLine: { lineStyle: { color: '#666' } },
+                    axisLabel: { color: '#666' },
+                    splitLine: { lineStyle: { color: '#E0E0E0' } }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { lineStyle: { color: '#666' } },
+                    axisLabel: { color: '#666' },
+                    splitLine: { lineStyle: { color: '#E0E0E0' } }
+                },
+                series: [
+                    {
+                        name: 'Base Function',
+                        type: 'line',
+                        data: baseData,
+                        lineStyle: { 
+                            color: '#666', 
+                            width: 2,
+                            type: 'dashed'
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'Transformed Function',
+                        type: 'line',
+                        data: transformedData,
+                        lineStyle: { 
+                            color: '#2196F3', 
+                            width: 3
+                        },
+                        symbol: 'none'
+                    }
+                ],
+                animation: true,
+                animationDuration: 400,
+                animationEasing: 'cubicOut'
+            };
+
+            chart.setOption(option);
+            updateEquationDisplay();
+        }
+
+        // Update equation display
+        function updateEquationDisplay() {
+            const a = verticalFactor.toFixed(2);
+            const b = horizontalFactor.toFixed(2);
+            const func = currentFunctionName;
+            
+            document.getElementById('liveEquation').textContent = `y = ${a} · ${func.replace('x', `(${b}·x)`)}`;
+        }
+
+        // Slider event handlers
+        function setupSliders() {
+            const verticalSlider = document.getElementById('verticalSlider');
+            const horizontalSlider = document.getElementById('horizontalSlider');
+            
+            verticalSlider.addEventListener('input', function() {
+                verticalFactor = parseFloat(this.value);
+                document.getElementById('verticalValue').textContent = verticalFactor.toFixed(1);
+                updateSliderPosition('vertical', verticalFactor);
+                updateGraph();
+            });
+            
+            horizontalSlider.addEventListener('input', function() {
+                horizontalFactor = parseFloat(this.value);
+                document.getElementById('horizontalValue').textContent = horizontalFactor.toFixed(1);
+                updateSliderPosition('horizontal', horizontalFactor);
+                updateGraph();
+            });
+        }
+
+        // Update slider thumb position
+        function updateSliderPosition(type, value) {
+            const percentage = ((value - 0.1) / (5 - 0.1)) * 100;
+            const thumb = document.getElementById(type + 'Thumb');
+            thumb.style.left = `calc(${percentage}% - 14px)`;
+        }
+
+        // Mouse tracking for coordinate display
+        function setupMouseTracking() {
+            const graphContainer = document.getElementById('mainGraph');
+            const tracer = document.getElementById('tracer');
+            const tooltip = document.getElementById('tooltip');
+            
+            graphContainer.addEventListener('mousemove', function(e) {
+                const rect = graphContainer.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Convert pixel coordinates to data coordinates
+                const dataX = ((x / rect.width) * 20) - 10; // -10 to 10
+                let dataY;
+                
+                switch(currentFunctionName) {
+                    case 'sin(x)':
+                        dataY = verticalFactor * Math.sin(horizontalFactor * dataX);
+                        break;
+                    case 'cos(x)':
+                        dataY = verticalFactor * Math.cos(horizontalFactor * dataX);
+                        break;
+                    case 'x²':
+                        dataY = verticalFactor * (horizontalFactor * dataX) * (horizontalFactor * dataX);
+                        break;
+                    case '√x':
+                        dataY = dataX >= 0 ? verticalFactor * Math.sqrt(horizontalFactor * dataX) : NaN;
+                        break;
+                    case '|x|':
+                        dataY = verticalFactor * Math.abs(horizontalFactor * dataX);
+                        break;
+                    case '1/x':
+                        dataY = dataX !== 0 ? verticalFactor * (1/(horizontalFactor * dataX)) : NaN;
+                        break;
+                    default:
+                        dataY = verticalFactor * Math.sin(horizontalFactor * dataX);
+                }
+                
+                if (!isNaN(dataY)) {
+                    tracer.style.left = x + 'px';
+                    tracer.style.top = y + 'px';
+                    tracer.style.opacity = '1';
+                    tooltip.style.opacity = '1';
+                    document.getElementById('tooltipText').textContent = `(${dataX.toFixed(2)}, ${dataY.toFixed(2)})`;
+                } else {
+                    tracer.style.opacity = '0';
+                    tooltip.style.opacity = '0';
+                }
+            });
+            
+            graphContainer.addEventListener('mouseleave', function() {
+                tracer.style.opacity = '0';
+                tooltip.style.opacity = '0';
+            });
+        }
+
+        // Preset button functions
+        function setVerticalValue(value) {
+            verticalFactor = value;
+            document.getElementById('verticalSlider').value = value;
+            document.getElementById('verticalValue').textContent = value.toFixed(1);
+            updateSliderPosition('vertical', value);
+            updateGraph();
+        }
+
+        function setHorizontalValue(value) {
+            horizontalFactor = value;
+            document.getElementById('horizontalSlider').value = value;
+            document.getElementById('horizontalValue').textContent = value.toFixed(1);
+            updateSliderPosition('horizontal', value);
+            updateGraph();
+        }
+
+        // Reset function
+        function resetGraph() {
+            setVerticalValue(1.0);
+            setHorizontalValue(1.0);
+            
+            anime({
+                targets: '#mainGraph',
+                scale: [0.95, 1],
+                duration: 400,
+                easing: 'easeOutBack'
+            });
+        }
+
+        // Function selector modal
+        function showFunctionSelector() {
+            document.getElementById('functionModal').classList.remove('hidden');
+            anime({
+                targets: '#functionModal > div',
+                scale: [0.8, 1],
+                opacity: [0, 1],
+                duration: 300,
+                easing: 'easeOutBack'
+            });
+        }
+
+        function hideFunctionSelector() {
+            anime({
+                targets: '#functionModal > div',
+                scale: [1, 0.8],
+                opacity: [1, 0],
+                duration: 200,
+                easing: 'easeInBack',
+                complete: () => {
+                    document.getElementById('functionModal').classList.add('hidden');
+                }
+            });
+        }
+
+        function selectFunction(funcName) {
+            currentFunctionName = funcName;
+            document.getElementById('currentFunction').textContent = funcName;
+            updateGraph();
+            hideFunctionSelector();
+            
+            // Update active button
+            document.querySelectorAll('.function-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.function-btn').classList.add('active');
+        }
+
+        // Challenge mode
+        function startChallenge() {
+            const challenges = [
+                { a: 2, b: 1, desc: "Vertical stretch by 2" },
+                { a: 0.5, b: 1, desc: "Vertical shrink by 1/2" },
+                { a: 1, b: 2, desc: "Horizontal shrink by 1/2" },
+                { a: 1, b: 0.5, desc: "Horizontal stretch by 2" },
+                { a: 3, b: 2, desc: "Vertical stretch by 3, horizontal shrink by 1/2" }
+            ];
+            
+            const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+            
+            setVerticalValue(randomChallenge.a);
+            setHorizontalValue(randomChallenge.b);
+            
+            alert(`Challenge: ${randomChallenge.desc}\nCan you identify the transformation?`);
+        }
+
+        // Navigation
+        function navigateTo(page) {
+            anime({
+                targets: 'body',
+                opacity: [1, 0.8],
+                duration: 300,
+                complete: () => {
+                    window.location.href = page;
+                }
+            });
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initGraph();
+            setupSliders();
+            
+            // Initialize slider positions
+            updateSliderPosition('vertical', verticalFactor);
+            updateSliderPosition('horizontal', horizontalFactor);
+            
+            // Animate entrance
+            anime({
+                targets: '.bg-white',
+                translateY: [50, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(200),
+                duration: 800,
+                easing: 'easeOutCubic'
+            });
+        });
+    </script>
+</body>
+</html>
